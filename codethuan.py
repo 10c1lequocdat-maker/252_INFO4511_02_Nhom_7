@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 from typing import Any, Dict, List, Optional
-
 from modules.customer_service import (
     CUSTOMER_TYPES, PACKAGES, PRODUCTS, SERVICE_STATUS_ALL, USAGE_DURATION_TYPES,
     active_customers, build_customer_record, customers_to_rows, enrich_customer,
@@ -11,13 +9,7 @@ from modules.customer_service import (
 )
 from modules.storage import load_customers, save_customers
 
-
-# =========================
 # GIAO DIỆN DÒNG LỆNH
-# File này chỉ input/print/menu và gọi hàm trong modules/customer_service.py.
-# Các ràng buộc đều được xử lý bằng validate_field() và validate_customer_record().
-# =========================
-
 def choose_from_list(title: str, options: List[str], default: Optional[str] = None) -> str:
     while True:
         print(f"\n{title}:")
@@ -34,7 +26,6 @@ def choose_from_list(title: str, options: List[str], default: Optional[str] = No
                 return item
         print("⚠️ Lựa chọn không hợp lệ. Vui lòng chọn lại.")
 
-
 def prompt_valid(field_name: str, label: str, default: Any = "", context: Optional[Dict[str, Any]] = None, allow_empty_default: bool = False) -> str:
     """Nhập một trường và kiểm tra ngay bằng validate_field trong customer_service.py."""
     while True:
@@ -47,7 +38,6 @@ def prompt_valid(field_name: str, label: str, default: Any = "", context: Option
             print(f"⚠️ {error}")
             continue
         return value
-
 
 def prompt_date_range(usage_duration_type: str, old_start: Any = "", old_expiry: Any = ""):
     """Nhập ngày và kiểm tra ngay bằng validate_field('date_range')."""
@@ -65,7 +55,6 @@ def prompt_date_range(usage_duration_type: str, old_start: Any = "", old_expiry:
             continue
         return start_date, expiry_date
 
-
 def prompt_balance(default: Any = 0) -> float:
     while True:
         raw = input(f"Công nợ VND [{default}]: ").strip()
@@ -76,12 +65,10 @@ def prompt_balance(default: Any = 0) -> float:
             continue
         return float(value)
 
-
 def print_errors(errors: List[str]) -> None:
     print("\nDữ liệu chưa hợp lệ:")
     for error in errors:
         print(f"- {error}")
-
 
 def print_table(customers: List[Dict[str, Any]]) -> None:
     if not customers:
@@ -94,7 +81,6 @@ def print_table(customers: List[Dict[str, Any]]) -> None:
     for row in rows:
         print(f"{row.get('STT',''):<5}{row.get('Mã KH',''):<10}{row.get('Tên khách hàng',''):<25}{row.get('Loại KH',''):<15}{row.get('SĐT',''):<15}{row.get('Email',''):<28}{row.get('Sản phẩm',''):<14}{row.get('Gói DV',''):<14}{row.get('Trạng thái',''):<15}{row.get('Công nợ',''):<15}")
     print("-" * 150)
-
 
 def print_detail(customer: Optional[Dict[str, Any]]) -> None:
     if not customer:
@@ -130,8 +116,6 @@ def print_detail(customer: Optional[Dict[str, Any]]) -> None:
         print(f"{label:<25}: {value}")
     print("-" * 70)
 
-
-
 def select_customer_from_table(active_list: List[Dict[str, Any]], all_customers: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """Hiển thị bảng và cho chọn khách hàng bằng STT hoặc mã KH."""
     print_table(active_list)
@@ -147,8 +131,7 @@ def select_customer_from_table(active_list: List[Dict[str, Any]], all_customers:
         if customer and not customer.get("is_deleted", False):
             return customer
         print("⚠️ Lựa chọn không hợp lệ. Vui lòng nhập đúng STT hoặc mã khách hàng trong bảng.")
-
-
+        
 def show_update_field_menu(data: Dict[str, Any]) -> None:
     """Hiển thị bảng các trường có thể sửa trong code thuần."""
     print("\nBẢNG THÔNG TIN CÓ THỂ CẬP NHẬT")
@@ -211,20 +194,12 @@ def add_customer_cli() -> None:
 
     customers.append(record)
     save_customers(customers)
-    print(f"\n✅ Thêm khách hàng {new_id} thành công! Dữ liệu đã lưu vào data/customers.json.")
+    print(f"\n✅ Thêm khách hàng {new_id} thành công! Dữ liệu đã lưu. ")
     print_detail(record)
 
 
 def update_customer_cli() -> None:
-    """Cập nhật theo kiểu bảng chọn trong terminal.
-
-    Quy trình:
-    1. Hiển thị bảng khách hàng đang hoạt động.
-    2. Chọn khách hàng bằng STT hoặc mã KH.
-    3. Hiển thị bảng các trường thông tin có thể sửa.
-    4. Chọn từng trường cần sửa, kiểm tra ràng buộc ngay bằng hàm trong customer_service.py.
-    5. Chọn 13 để lưu dữ liệu vào data/customers.json.
-    """
+   
     customers = load_customers()
     active_list = active_customers(customers)
     if not active_list:
@@ -253,7 +228,6 @@ def update_customer_cli() -> None:
 
         elif choice == "2":
             data["customer_type"] = choose_from_list("Loại khách hàng", CUSTOMER_TYPES, data.get("customer_type", "Cá nhân"))
-            # Khi đổi sang Doanh nghiệp, kiểm tra ngay hai trường bắt buộc.
             rep_error = validate_field("representative", data.get("representative") or "", {"customer_type": data["customer_type"]})
             tax_error = validate_field("tax_code", data.get("tax_code") or "", {"customer_type": data["customer_type"]})
             if rep_error:
@@ -340,7 +314,7 @@ def update_customer_cli() -> None:
                 is_deleted=current.get("is_deleted", False),
                 deleted_at=current.get("deleted_at"),
             )
-
+            
             errors = validate_customer_record(updated, customers, current_id=current.get("customer_id"))
             if errors:
                 print_errors(errors)
@@ -356,13 +330,11 @@ def update_customer_cli() -> None:
             print("✅ Cập nhật khách hàng thành công! Dữ liệu đã lưu vào data/customers.json.")
             print_detail(updated)
             return
-
         else:
             print("⚠️ Lựa chọn không hợp lệ. Vui lòng chọn lại.")
             continue
 
         print("✅ Đã cập nhật tạm thời trường vừa chọn. Chọn 13 để lưu vào file JSON.")
-
 
 def search_customer_cli() -> None:
     customers = load_customers()
@@ -375,7 +347,6 @@ def search_customer_cli() -> None:
         return
     print(f"Kết quả tìm kiếm: {len(results)} bản ghi")
     print_table(results)
-
 
 def delete_customer_cli() -> None:
     customers = load_customers()
@@ -398,7 +369,6 @@ def delete_customer_cli() -> None:
     else:
         print(f"⚠️ {message}")
 
-
 def list_customer_cli() -> None:
     customers = load_customers()
     result = [enrich_customer(c) for c in active_customers(customers)]
@@ -410,7 +380,6 @@ def list_customer_cli() -> None:
     if input("Xem chi tiết một khách hàng? [y/N]: ").strip().lower() == "y":
         customer_id = input("Nhập mã khách hàng: ").strip().upper()
         print_detail(find_customer_by_id(result, customer_id))
-
 
 def print_menu() -> None:
     print("\n" + "=" * 70)
@@ -438,7 +407,6 @@ def main() -> None:
             action()
         else:
             print("Lựa chọn không hợp lệ. Vui lòng chọn lại.")
-
 
 if __name__ == "__main__":
     main()
