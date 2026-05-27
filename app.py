@@ -452,7 +452,7 @@ elif menu == "Xem danh sách thông tin khách hàng":
         st.info('Không có khách hàng nào trên hệ thống. Vui lòng sử dụng chức năng "Nhập thông tin khách hàng" để thêm dữ liệu.')
     else:
         st.markdown(f"#### Tổng số khách hàng đang hoạt động: {len(active_list)}")
-        st.caption("Tick vào cột **Chọn** ở bên trái số thứ tự để xem chi tiết khách hàng. Hệ thống sẽ lấy khách hàng đầu tiên nếu bạn chọn nhiều dòng.")
+        st.caption("Tick vào cột **Chọn** ở bên trái số thứ tự để xem chi tiết khách hàng. Nếu chọn nhiều dòng, hệ thống sẽ hiển thị khách hàng nằm sau cùng trong các dòng đang được chọn.")
 
         rows = customers_to_rows(active_list)
         table_data = [{"Chọn": False, **row} for row in rows]
@@ -480,9 +480,9 @@ elif menu == "Xem danh sách thông tin khách hàng":
             st.info("Vui lòng tick chọn một khách hàng trong bảng để xem thông tin chi tiết.")
         else:
             if len(selected_rows) > 1:
-                st.warning("Bạn đang chọn nhiều khách hàng. Hệ thống sẽ hiển thị chi tiết khách hàng đầu tiên được chọn.")
+                st.warning("Bạn đang chọn nhiều khách hàng. Hệ thống sẽ hiển thị chi tiết khách hàng ở dòng được chọn sau cùng trong bảng.")
 
-            selected_id = str(selected_rows.iloc[0]["Mã KH"])
+            selected_id = str(selected_rows.iloc[-1]["Mã KH"])
             selected_customer = find_customer_by_id(active_list, selected_id)
 
             st.markdown("### Thông tin chi tiết khách hàng")
