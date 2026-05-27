@@ -392,20 +392,50 @@ elif menu == "Tìm kiếm thông tin khách hàng":
 elif menu == "Xóa thông tin khách hàng":
     st.markdown('<div class="section-title">Xóa thông tin khách hàng</div>', unsafe_allow_html=True)
     active_list = [enrich_customer(c) for c in active_customers(customers)]
+
     if not active_list:
         st.info("Không có khách hàng đang hoạt động để xóa.")
     else:
-        selected = st.selectbox("Chọn khách hàng cần xóa", [f"{c['customer_id']} - {c['customer_name']} - {c['service_status']}" for c in active_list])
-        selected_id = selected.split(" - ")[0]
-        selected_customer = find_customer_by_id(customers, selected_id)
+        st.markdown("### Bước 1: Nhập mã khách hàng cần xóa")
+        st.caption("Nhập đúng mã khách hàng, ví dụ: KH001. Bảng bên dưới chỉ dùng để tham khảo mã khách hàng, không cần chọn từ danh sách.")
+
+        st.dataframe(
+            pd.DataFrame(customers_to_rows(active_list)),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        delete_id = st.text_input(
+            "Nhập mã khách hàng cần xóa",
+            placeholder="Ví dụ: KH001",
+            key="delete_customer_id_input",
+        ).strip().upper()
+
+        if not delete_id:
+            st.info("Vui lòng nhập mã khách hàng cần xóa để xem chi tiết và thực hiện thao tác xóa mềm.")
+            st.stop()
+
+        selected_customer = find_customer_by_id(active_list, delete_id)
+
+        if not selected_customer:
+            deleted_or_other = find_customer_by_id(customers, delete_id)
+            if deleted_or_other and deleted_or_other.get("is_deleted"):
+                st.warning("Khách hàng này đã bị xóa mềm trước đó nên không thể xóa tiếp.")
+            else:
+                st.error("Không tìm thấy khách hàng đang hoạt động với mã đã nhập. Vui lòng kiểm tra lại mã khách hàng.")
+            st.stop()
+
+        st.markdown("### Bước 2: Thông tin khách hàng được chọn")
         render_customer_detail(selected_customer)
+
         st.warning("Hệ thống sử dụng xóa mềm. Khách hàng đang Hoạt động/Sắp hết hạn hoặc còn công nợ sẽ không được xóa.")
         confirm = st.checkbox("Tôi xác nhận muốn xóa khách hàng này")
+
         if st.button("Xóa khách hàng", type="primary"):
             if not confirm:
                 st.error("Vui lòng tick xác nhận trước khi xóa.")
             else:
-                ok, msg = soft_delete_customer(customers, selected_id)
+                ok, msg = soft_delete_customer(customers, delete_id)
                 if ok:
                     save_customers(customers)
                     st.session_state["flash_success"] = msg
