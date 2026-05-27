@@ -1,11 +1,8 @@
 from __future__ import annotations
-
 from datetime import date, timedelta
 from typing import Any, Dict, List
-
 import pandas as pd
 import streamlit as st
-
 from modules.customer_service import (
     CUSTOMER_TYPES, PACKAGES, PRODUCTS, SERVICE_STATUS_ALL, USAGE_DURATION_TYPES,
     active_customers, build_customer_record, customers_to_rows, enrich_customer,
@@ -13,9 +10,7 @@ from modules.customer_service import (
     search_customers, soft_delete_customer, validate_customer_record, validate_field,
 )
 from modules.storage import load_customers, save_customers
-
 st.set_page_config(page_title="Quản lý khách hàng MISA", layout="wide")
-
 st.markdown("""
 <style>
 .main-title{background:linear-gradient(90deg,#0052cc,#0078d4);color:white;padding:18px 24px;border-radius:12px;text-align:center;font-size:30px;font-weight:700;margin-bottom:18px}.section-title{color:#0052cc;font-size:28px;font-weight:700;margin-bottom:16px}.detail-box{background:#f8fbff;border:1px solid #d6e4f5;border-radius:12px;padding:18px 20px;margin-top:14px}.note-box{background:#fff7e6;border:1px solid #ffd591;border-radius:10px;padding:12px 16px;margin-top:16px}.small-muted{color:#64748b;font-size:14px}div.stButton>button:first-child{border-radius:9px;font-weight:600}
@@ -197,7 +192,6 @@ elif menu == "Cập nhật thông tin khách hàng":
     if not active_list:
         st.info("Chưa có khách hàng đang hoạt động để cập nhật.")
     else:
-        st.markdown("### Bước 1: Nhập mã khách hàng cần cập nhật")
         st.caption("Nhập đúng mã khách hàng, ví dụ: KH001. Bảng bên dưới chỉ dùng để tham khảo mã khách hàng, không cần tick chọn.")
 
         st.dataframe(
@@ -227,11 +221,8 @@ elif menu == "Cập nhật thông tin khách hàng":
             st.stop()
 
         c = enrich_customer(current)
-        st.markdown("### Bước 2: Thông tin khách hàng được chọn")
         render_customer_detail(c)
         update_errors: List[str] = []
-
-        st.markdown("### Bước 3: Chỉnh sửa thông tin khách hàng")
 
         u1, u2, u3 = st.columns(3)
         with u1:
@@ -297,7 +288,6 @@ elif menu == "Cập nhật thông tin khách hàng":
                 index=USAGE_DURATION_TYPES.index(c.get("usage_duration_type", "Có thời hạn")) if c.get("usage_duration_type") in USAGE_DURATION_TYPES else 0,
                 key=f"update_usage_{selected_id}",
             )
-
         p4, p5, p6 = st.columns(3)
         if usage_duration_type == "Có thời hạn":
             with p4:
@@ -388,7 +378,6 @@ elif menu == "Tìm kiếm thông tin khách hàng":
             chosen = st.selectbox("Xem chi tiết kết quả", [f"{c['customer_id']} - {c['customer_name']}" for c in results])
             render_customer_detail(find_customer_by_id(results, chosen.split(" - ")[0]) or results[0])
 
-
 elif menu == "Xóa thông tin khách hàng":
     st.markdown('<div class="section-title">Xóa thông tin khách hàng</div>', unsafe_allow_html=True)
     active_list = [enrich_customer(c) for c in active_customers(customers)]
@@ -396,7 +385,6 @@ elif menu == "Xóa thông tin khách hàng":
     if not active_list:
         st.info("Không có khách hàng đang hoạt động để xóa.")
     else:
-        st.markdown("### Bước 1: Nhập mã khách hàng cần xóa")
         st.caption("Nhập đúng mã khách hàng, ví dụ: KH001. Bảng bên dưới chỉ dùng để tham khảo mã khách hàng, không cần chọn từ danh sách.")
 
         st.dataframe(
@@ -404,7 +392,6 @@ elif menu == "Xóa thông tin khách hàng":
             use_container_width=True,
             hide_index=True,
         )
-
         delete_id = st.text_input(
             "Nhập mã khách hàng cần xóa",
             placeholder="Ví dụ: KH001",
@@ -425,7 +412,6 @@ elif menu == "Xóa thông tin khách hàng":
                 st.error("Không tìm thấy khách hàng đang hoạt động với mã đã nhập. Vui lòng kiểm tra lại mã khách hàng.")
             st.stop()
 
-        st.markdown("### Bước 2: Thông tin khách hàng được chọn")
         render_customer_detail(selected_customer)
 
         st.warning("Hệ thống sử dụng xóa mềm. Khách hàng đang Hoạt động/Sắp hết hạn hoặc còn công nợ sẽ không được xóa.")
@@ -454,7 +440,6 @@ elif menu == "Xem danh sách thông tin khách hàng":
         st.markdown(f"#### Tổng số khách hàng đang hoạt động: {len(active_list)}")
         st.caption(
             "Tick vào cột **Chọn** ở bên trái số thứ tự để xem chi tiết khách hàng. "
-            "Khi chọn khách hàng mới, hệ thống sẽ tự bỏ tick khách hàng cũ và chỉ giữ một dòng được chọn."
         )
 
         rows = customers_to_rows(active_list)
