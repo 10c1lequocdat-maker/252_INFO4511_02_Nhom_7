@@ -452,12 +452,31 @@ elif menu == "Xem danh sách thông tin khách hàng":
         st.info('Không có khách hàng nào trên hệ thống. Vui lòng sử dụng chức năng "Nhập thông tin khách hàng" để thêm dữ liệu.')
     else:
         st.markdown(f"#### Tổng số khách hàng đang hoạt động: {len(active_list)}")
-        st.caption("Tick vào cột **Chọn** ở bên trái số thứ tự để xem chi tiết khách hàng. Nếu chọn nhiều dòng, hệ thống sẽ hiển thị khách hàng nằm sau cùng trong các dòng đang được chọn.")
+        st.caption(
+            "Tick vào cột **Chọn** ở bên trái số thứ tự để xem chi tiết khách hàng. "
+            "Khi chọn khách hàng mới, hệ thống sẽ tự bỏ tick khách hàng cũ và chỉ giữ một dòng được chọn."
+        )
 
         rows = customers_to_rows(active_list)
-        table_data = [{"Chọn": False, **row} for row in rows]
+        valid_ids = {str(row.get("Mã KH", "")) for row in rows}
+
+        # Lưu khách hàng đang được chọn để tạo hiệu ứng chỉ được chọn 1 dòng.
+        selected_id_state_key = "view_selected_customer_id"
+        table_version_key = "view_customer_table_version"
+
+        selected_id_state = st.session_state.get(selected_id_state_key)
+        if selected_id_state not in valid_ids:
+            selected_id_state = None
+            st.session_state[selected_id_state_key] = None
+
+        table_data = []
+        for row in rows:
+            row_id = str(row.get("Mã KH", ""))
+            table_data.append({"Chọn": row_id == selected_id_state, **row})
+
         table_df = pd.DataFrame(table_data)
         disabled_columns = [col for col in table_df.columns if col != "Chọn"]
+        table_version = st.session_state.get(table_version_key, 0)
 
         edited_df = st.data_editor(
             table_df,
@@ -471,20 +490,34 @@ elif menu == "Xem danh sách thông tin khách hàng":
                     default=False,
                 )
             },
-            key="view_customer_detail_picker_table",
+            key=f"view_customer_detail_picker_table_{table_version}",
         )
 
         selected_rows = edited_df[edited_df["Chọn"] == True]
+        selected_ids = [str(value) for value in selected_rows["Mã KH"].tolist()]
+        previous_selected_id = st.session_state.get(selected_id_state_key)
 
-        if selected_rows.empty:
+        if not selected_ids:
+            if previous_selected_id is not None:
+                st.session_state[selected_id_state_key] = None
+                st.session_state[table_version_key] = table_version + 1
+                st.rerun()
             st.info("Vui lòng tick chọn một khách hàng trong bảng để xem thông tin chi tiết.")
         else:
-            if len(selected_rows) > 1:
-                st.warning("Bạn đang chọn nhiều khách hàng. Hệ thống sẽ hiển thị chi tiết khách hàng ở dòng được chọn sau cùng trong bảng.")
+            # Nếu bảng đang có nhiều tick, xác định dòng mới được tick và chỉ giữ dòng đó.
+            if previous_selected_id in selected_ids and len(selected_ids) > 1:
+                newly_selected_ids = [customer_id for customer_id in selected_ids if customer_id != previous_selected_id]
+                selected_id = newly_selected_ids[-1] if newly_selected_ids else selected_ids[-1]
+            else:
+                selected_id = selected_ids[-1]
 
-            selected_id = str(selected_rows.iloc[-1]["Mã KH"])
+            # Khi người dùng chọn dòng mới hoặc đang có nhiều dòng tick, refresh bảng để bỏ tick dòng cũ.
+            if selected_id != previous_selected_id or len(selected_ids) > 1:
+                st.session_state[selected_id_state_key] = selected_id
+                st.session_state[table_version_key] = table_version + 1
+                st.rerun()
+
             selected_customer = find_customer_by_id(active_list, selected_id)
-
             st.markdown("### Thông tin chi tiết khách hàng")
             render_customer_detail(selected_customer or active_list[0])
 
