@@ -31,10 +31,8 @@ def show_error_once(errors: List[str], message: str | None) -> None:
         errors.append(message)
         st.error(message)
 
-
 def date_default(value: Any, fallback: date) -> date:
     return parse_date(value) or fallback
-
 
 def render_customer_detail(customer: Dict[str, Any]) -> None:
     if not customer:
@@ -64,7 +62,6 @@ def render_customer_detail(customer: Dict[str, Any]) -> None:
     st.write(f"**created_at:** {c.get('created_at', '')} | **updated_at:** {c.get('updated_at', '')} | **deleted_at:** {c.get('deleted_at') or ''}")
     st.markdown('</div>', unsafe_allow_html=True)
 
-
 with st.sidebar:
     st.markdown("## MISA")
     st.markdown("### Menu chức năng")
@@ -73,8 +70,6 @@ with st.sidebar:
         ["Nhập thông tin khách hàng", "Cập nhật thông tin khách hàng", "Tìm kiếm thông tin khách hàng", "Xóa thông tin khách hàng", "Xem danh sách thông tin khách hàng"],
         label_visibility="collapsed",
     )
-
-
 if menu == "Nhập thông tin khách hàng":
     st.markdown('<div class="section-title">Nhập thông tin khách hàng</div>', unsafe_allow_html=True)
     form_version = st.session_state.get("add_form_version", 0)
@@ -184,7 +179,6 @@ if menu == "Nhập thông tin khách hàng":
             st.session_state["add_form_version"] = form_version + 1
             st.rerun()
 
-
 elif menu == "Cập nhật thông tin khách hàng":
     st.markdown('<div class="section-title">Cập nhật thông tin khách hàng</div>', unsafe_allow_html=True)
     active_list = [enrich_customer(c) for c in active_customers(customers)]
@@ -199,7 +193,6 @@ elif menu == "Cập nhật thông tin khách hàng":
             use_container_width=True,
             hide_index=True,
         )
-
         selected_id = st.text_input(
             "Nhập mã khách hàng muốn xem chi tiết/cập nhật",
             placeholder="Ví dụ: KH001",
@@ -441,11 +434,9 @@ elif menu == "Xem danh sách thông tin khách hàng":
         st.caption(
             "Tick vào cột **Chọn** ở bên trái số thứ tự để xem chi tiết khách hàng. "
         )
-
         rows = customers_to_rows(active_list)
         valid_ids = {str(row.get("Mã KH", "")) for row in rows}
 
-        # Lưu khách hàng đang được chọn để tạo hiệu ứng chỉ được chọn 1 dòng.
         selected_id_state_key = "view_selected_customer_id"
         table_version_key = "view_customer_table_version"
 
@@ -489,14 +480,12 @@ elif menu == "Xem danh sách thông tin khách hàng":
                 st.rerun()
             st.info("Vui lòng tick chọn một khách hàng trong bảng để xem thông tin chi tiết.")
         else:
-            # Nếu bảng đang có nhiều tick, xác định dòng mới được tick và chỉ giữ dòng đó.
             if previous_selected_id in selected_ids and len(selected_ids) > 1:
                 newly_selected_ids = [customer_id for customer_id in selected_ids if customer_id != previous_selected_id]
                 selected_id = newly_selected_ids[-1] if newly_selected_ids else selected_ids[-1]
             else:
                 selected_id = selected_ids[-1]
-
-            # Khi người dùng chọn dòng mới hoặc đang có nhiều dòng tick, refresh bảng để bỏ tick dòng cũ.
+                
             if selected_id != previous_selected_id or len(selected_ids) > 1:
                 st.session_state[selected_id_state_key] = selected_id
                 st.session_state[table_version_key] = table_version + 1
