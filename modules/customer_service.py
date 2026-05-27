@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import re
 import unicodedata
 from datetime import date, datetime
@@ -11,10 +10,7 @@ CUSTOMER_TYPES = ["Cá nhân", "Doanh nghiệp"]
 USAGE_DURATION_TYPES = ["Có thời hạn", "Vĩnh viễn"]
 SERVICE_STATUS_ALL = ["Tất cả", "Hoạt động", "Sắp hết hạn", "Hết hạn", "Đã xóa"]
 
-
-# =========================
-# 1. CHUẨN HÓA DỮ LIỆU
-# =========================
+# CHUẨN HÓA DỮ LIỆU
 
 def now_str() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -30,21 +26,17 @@ def remove_accents(text: Any) -> str:
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
     return text.replace("đ", "d").replace("Đ", "D")
 
-
 def normalize_keyword(text: Any) -> str:
     return remove_accents(normalize_spaces(text)).lower()
 
-
 def digits_only(text: Any) -> str:
     return re.sub(r"\D", "", str(text or ""))
-
 
 def to_float(value: Any, default: float = 0.0) -> float:
     try:
         return float(value)
     except (TypeError, ValueError):
         return default
-
 
 def parse_date(value: Any) -> Optional[date]:
     if isinstance(value, date):
@@ -56,22 +48,17 @@ def parse_date(value: Any) -> Optional[date]:
         return datetime.strptime(value, "%Y-%m-%d").date()
     except ValueError:
         return None
-
-
-# =========================
-# 2. TRẠNG THÁI VÀ DANH MỤC
-# =========================
+        
+# TRẠNG THÁI VÀ DANH MỤC
 
 def parse_customer_no(customer_id: Any) -> int:
     match = re.search(r"KH(\d+)$", str(customer_id or "").upper())
     return int(match.group(1)) if match else 0
 
-
 def generate_next_customer_id(customers: List[Dict[str, Any]]) -> str:
     """Sinh mã KH dựa trên mã lớn nhất từng tồn tại, kể cả bản ghi đã xóa."""
     max_no = max([parse_customer_no(c.get("customer_id", "")) for c in customers] or [0])
     return f"KH{max_no + 1:03d}"
-
 
 def calculate_payment_status(balance: Any) -> str:
     balance = to_float(balance)
@@ -80,7 +67,6 @@ def calculate_payment_status(balance: Any) -> str:
     if balance > 0:
         return "Chưa thanh toán"
     return f"Đã thanh toán (Dư: {abs(balance):,.0f} VND)"
-
 
 def calculate_service_status(expiry_date: Any, usage_duration_type: str = "Có thời hạn") -> str:
     if usage_duration_type == "Vĩnh viễn":
@@ -96,7 +82,6 @@ def calculate_service_status(expiry_date: Any, usage_duration_type: str = "Có t
     if (exp - today).days <= 30:
         return "Sắp hết hạn"
     return "Hoạt động"
-
 
 def enrich_customer(customer: Dict[str, Any]) -> Dict[str, Any]:
     """Tạo bản sao khách hàng kèm trạng thái dịch vụ/tài chính được tính động."""
@@ -115,14 +100,10 @@ def enrich_customer(customer: Dict[str, Any]) -> Dict[str, Any]:
     c["balance"] = balance
     return c
 
-
 def active_customers(customers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return [c for c in customers if not c.get("is_deleted", False)]
 
-
-# =========================
-# 3. RÀNG BUỘC VÀ KIỂM TRA DỮ LIỆU
-# =========================
+# RÀNG BUỘC VÀ KIỂM TRA DỮ LIỆU
 
 def phone_is_valid(phone: Any) -> bool:
     phone_digits = digits_only(phone)
@@ -133,13 +114,11 @@ def email_is_valid(email: Any) -> bool:
     email = normalize_spaces(email)
     return bool(re.match(r"^[\w\.-]+@[\w\.-]+\.[A-Za-z]{2,}$", email))
 
-
 def tax_code_is_valid(tax_code: Any) -> bool:
     tax_code = normalize_spaces(tax_code)
     if not tax_code:
         return True
     return len(digits_only(tax_code)) in (10, 12, 13)
-
 
 def validate_date_range(start_date_value: Any, expiry_date_value: Any, usage_duration_type: str = "Có thời hạn") -> Optional[str]:
     """Kiểm tra ngày bắt đầu / ngày hết hạn. Trả về None nếu hợp lệ."""
@@ -156,7 +135,6 @@ def validate_date_range(start_date_value: Any, expiry_date_value: Any, usage_dur
         return "Ngày hết hạn phải lớn hơn ngày bắt đầu."
     return None
 
-
 def validate_balance(balance: Any) -> Optional[str]:
     try:
         if float(balance) < 0:
@@ -164,7 +142,6 @@ def validate_balance(balance: Any) -> Optional[str]:
     except (TypeError, ValueError):
         return "Công nợ phải là số."
     return None
-
 
 def validate_field(field_name: str, value: Any, context: Optional[Dict[str, Any]] = None) -> Optional[str]:
     context = context or {}
@@ -241,8 +218,6 @@ def validate_field(field_name: str, value: Any, context: Optional[Dict[str, Any]
         )
 
     return None
-
-
 def get_customer_duplicate_error(
     customer: Dict[str, Any],
     customers: List[Dict[str, Any]],
@@ -323,7 +298,6 @@ def validate_customer_record(
     duplicate_error = get_customer_duplicate_error(customer, customers, current_id=current_id)
     if duplicate_error:
         errors.append(duplicate_error)
-
     # Loại bỏ lỗi trùng để kết quả gọn hơn
     unique_errors: List[str] = []
     for error in errors:
@@ -331,13 +305,9 @@ def validate_customer_record(
             unique_errors.append(error)
     return unique_errors
 
-
 validate_customer = validate_customer_record
 
-
-# =========================
-# 4. TẠO / CẬP NHẬT / XÓA / TÌM KIẾM
-# =========================
+# TẠO / CẬP NHẬT / XÓA / TÌM KIẾM
 
 def build_customer_record(
     customer_id: str,
@@ -409,15 +379,12 @@ def build_customer_record(
         "is_deleted": bool(is_deleted),
         "deleted_at": deleted_at,
     }
-
-
 def find_customer_by_id(customers: List[Dict[str, Any]], customer_id: str) -> Optional[Dict[str, Any]]:
     customer_id = normalize_spaces(customer_id).upper()
     for c in customers:
         if c.get("customer_id") == customer_id:
             return c
     return None
-
 
 def replace_customer_by_id(customers: List[Dict[str, Any]], customer_id: str, new_record: Dict[str, Any]) -> bool:
     customer_id = normalize_spaces(customer_id).upper()
@@ -426,7 +393,6 @@ def replace_customer_by_id(customers: List[Dict[str, Any]], customer_id: str, ne
             customers[idx] = new_record
             return True
     return False
-
 
 def can_delete_customer(customer: Optional[Dict[str, Any]]) -> Tuple[bool, str]:
     if not customer:
@@ -443,7 +409,6 @@ def can_delete_customer(customer: Optional[Dict[str, Any]]) -> Tuple[bool, str]:
 
     return True, "Có thể xóa khách hàng."
 
-
 def soft_delete_customer(customers: List[Dict[str, Any]], customer_id: str) -> Tuple[bool, str]:
     customer = find_customer_by_id(customers, customer_id)
     ok, message = can_delete_customer(customer)
@@ -454,7 +419,6 @@ def soft_delete_customer(customers: List[Dict[str, Any]], customer_id: str) -> T
     customer["deleted_at"] = now_str()
     customer["updated_at"] = now_str()
     return True, f"Đã xóa mềm khách hàng {customer.get('customer_id')} - {customer.get('customer_name')}."
-
 
 def search_customers(
     customers: List[Dict[str, Any]],
@@ -500,7 +464,6 @@ def search_customers(
 
     return final_results, ""
 
-
 def filter_customers(
     customers: List[Dict[str, Any]],
     keyword: str = "",
@@ -524,7 +487,6 @@ def filter_customers(
         result.append(c)
 
     return result
-
 
 def customers_to_rows(customers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
